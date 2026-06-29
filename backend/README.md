@@ -1,12 +1,14 @@
-# 평생곁에 — 백엔드 (F1 자산 케어 RAG)
+# 평생곁에 — 백엔드 (F1 자산 케어 RAG · F2 사기 방어 FDS)
 
-전북·전남 어르신에게 금융을 쉽게 설명하는 **실제 작동 RAG**입니다.
-검색(BM25 + BGE-M3 + RRF)으로 근거를 찾고, **EXAONE-3.5-2.4B**(로컬·무료)로 답하며,
-근거가 없으면 지어내지 않고 **상담사 연결**로 폴백합니다(환각 방지 가드레일).
+전북·전남 어르신을 지키는 **실제 작동 백엔드**입니다.
+
+- **F1 자산 케어 RAG** (`/chat`): 검색(BM25 + BGE-M3 + RRF)으로 근거를 찾고 **EXAONE-3.5-2.4B**(로컬·무료)로 답하며, 근거가 없으면 지어내지 않고 **상담사 연결**로 폴백(환각 방지 가드레일).
+- **F2 거래단 사기 방어 FDS** (`/fds`): 1층 가이드라인 룰 + 2층 개인화 베이스라인(z-score) → 위험 신호등. LLM이 필요 없어 **즉시 응답**. 같은 300만원도 평소 패턴 유무로 통과/차단이 갈린다.
 
 ```
-[데모 챗 UI] --POST /chat--> [FastAPI :8000] --검색--> docs/*.md
-                                            \--생성--> Ollama(EXAONE 3.5)
+[데모 챗 UI]   --POST /chat--> [FastAPI :8000] --검색--> docs/*.md
+                                             \--생성--> Ollama(EXAONE 3.5)
+[데모 사기방어] --POST /fds---> [FastAPI :8000]  2층 FDS 엔진 → 신호등🟢🟡🔴
 ```
 
 ## 1. 준비 (한 번만)
@@ -38,7 +40,14 @@ python server.py
 ## 4. 빠른 점검 (서버 없이 터미널에서)
 
 ```bash
+# F1 자산 케어 RAG
 curl -X POST http://127.0.0.1:8000/chat -H "Content-Type: application/json" -d "{\"message\":\"주택연금 받으면 기초연금도 같이 받을 수 있나요?\"}"
+
+# F2 사기 방어 — 같은 300만원, 다른 결과
+#  박OO(평소 큰 금액도 보냄) → 안전 🟢
+curl -X POST http://127.0.0.1:8000/fds -H "Content-Type: application/json" -d "{\"amount\":3000000,\"age\":71,\"isNew\":false,\"known\":true,\"baseAmounts\":[300000,350000,280000,2500000,3000000,320000],\"usualHours\":[10,11,14,15],\"hour\":14}"
+#  김OO(낯선 안전계좌) → 위험 🔴 (score 100)
+curl -X POST http://127.0.0.1:8000/fds -H "Content-Type: application/json" -d "{\"amount\":3000000,\"age\":73,\"isNew\":true,\"known\":false,\"baseAmounts\":[200000,250000,180000,300000,220000],\"usualHours\":[9,10,13,16],\"hour\":14}"
 ```
 
 ## 5. CPU 안내

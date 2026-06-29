@@ -11,10 +11,12 @@
   → http://127.0.0.1:8000  (데모 index.html이 이 주소로 연결됨)
 """
 from contextlib import asynccontextmanager
+from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import rag
+import fds
 
 ENGINE = rag.RagEngine()
 
@@ -39,6 +41,16 @@ class ChatIn(BaseModel):
     message: str
 
 
+class FdsIn(BaseModel):
+    amount: int
+    age: int = 70
+    isNew: bool = False
+    known: bool = True
+    baseAmounts: List[int] = []
+    usualHours: List[int] = []
+    hour: int = 14
+
+
 @app.get("/health")
 def health():
     return {"ok": ENGINE.ready, "llm": rag.LLM_MODEL, "embed": rag.EMBED_MODEL,
@@ -48,6 +60,13 @@ def health():
 @app.post("/chat")
 def chat(inp: ChatIn):
     return ENGINE.answer(inp.message)
+
+
+@app.post("/fds")
+def fds_eval(inp: FdsIn):
+    """F2 거래 사기 방어 — 거래 한 건 평가 → 위험 신호등+사유. (LLM 불필요, 즉시 응답)"""
+    return fds.evaluate(inp.age, inp.isNew, inp.known, inp.amount,
+                        inp.baseAmounts, inp.usualHours, inp.hour)
 
 
 if __name__ == "__main__":

@@ -711,12 +711,21 @@ function setPattern(p){custom.pattern=p;pt1.classList.toggle('on',p==='small');p
 function setTime(h){custom.hour=h;tm1.classList.toggle('on',h===14);tm0.classList.toggle('on',h===3);render();}
 function setAmt(v){amount=v*10000;amtLabel.textContent=v;hideOverlay();render();}
 function hideOverlay(){overlay.classList.remove('show');}
-function trySend(){
-  const r=render();
-  window._cur={who:activeUser().holder,amt:amount,reason:(r.flags[0]?r.flags[0].text:'이상 거래'),city:'전주'};
+async function trySend(){
+  const u=activeUser();
+  let r=render();                          // 브라우저 엔진으로 즉시 렌더(게이지·로그)
+  let engine="브라우저 엔진";
+  try{                                     // 백엔드 FDS 엔진(Python)이 켜져 있으면 그 판정을 사용
+    const resp=await fetch(API+"/fds",{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({amount:amount,age:u.age,isNew:u.isNew,known:u.known,baseAmounts:u.baseAmounts,usualHours:u.usualHours,hour:u.hour})});
+    if(resp.ok){r=await resp.json();engine="JB FDS 엔진 · Python 백엔드";aiLive=true;markPill();}
+  }catch(e){}
+  window._cur={who:u.holder,amt:amount,reason:(r.flags[0]?r.flags[0].text:'이상 거래'),city:'전주'};
   sheet.className="sheet "+r.cls;sig.className="sig "+r.cls;
   sig.textContent=r.cls==="safe"?"✅":r.cls==="warn"?"🟡":"🛑";
-  ovTitle.className=r.cls;ovTitle.textContent=r.cls==="safe"?"안전한 거래예요":r.cls==="warn"?"한 번만 확인할게요":"송금을 멈추세요";
+  ovTitle.className=r.cls;
+  ovTitle.innerHTML=(r.cls==="safe"?"안전한 거래예요":r.cls==="warn"?"한 번만 확인할게요":"송금을 멈추세요")
+    +` <span style="font-size:.58rem;font-weight:800;opacity:.65;border:1px solid currentColor;border-radius:999px;padding:2px 8px;vertical-align:middle;white-space:nowrap">⚙ ${engine}</span>`;
   ovSay.textContent=r.say;
   ovReasons.style.display=r.cls==="safe"?"none":"flex";
   ovReasons.innerHTML=r.flags.filter(f=>f.pts>0).map(f=>`<li>${f.text}</li>`).join('')||'<li>평소 거래 패턴과 일치합니다</li>';
