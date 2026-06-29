@@ -12,6 +12,12 @@ proposal/MVP제안서_평생곁에_초안.pptx
 [데이콘]*.pptx
 [데이콘]*.docx
 
+# 백엔드 — 생성물(임베딩 캐시)·파이썬 캐시·임시 테스트 출력은 제외
+backend/docs/.emb_cache.json
+__pycache__/
+*.pyc
+backend/_*.txt
+
 # OS / temp
 *.tmp
 Thumbs.db

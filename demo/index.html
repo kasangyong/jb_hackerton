@@ -526,7 +526,7 @@
       <h3 class="ct"><span class="dot"></span>이렇게 물어보세요</h3>
       <p class="hint">버튼을 누르거나, 왼쪽에 직접 입력하세요.</p>
       <div class="asks" id="asks"></div>
-      <div style="margin-top:16px" class="pill">RAG · 근거 인용 · 환각 방지 가드레일 · 음성 안내</div>
+      <div style="margin-top:16px" class="pill" id="aiPill">RAG · 근거 인용 · 환각 방지 가드레일 · 음성 안내</div>
     </div>
   </div>
 </section>
@@ -761,15 +761,38 @@ function addA(t,cites){const i=_spoken.push(t)-1;const e=document.createElement(
   e.innerHTML=t+(cites?`<div class="cite">${cites.map(c=>`<span>📎 ${c}</span>`).join('')}</div>`:'')+
     `<button class="speak" onclick="speak(_spoken[${i}])">🔊 읽어주기</button>`;
   msgs.appendChild(e);msgs.scrollTop=msgs.scrollHeight;}
-function answer(x){const tp=document.createElement('div');tp.className='m a typing';tp.innerHTML='<i></i><i></i><i></i>';msgs.appendChild(tp);msgs.scrollTop=msgs.scrollHeight;
-  setTimeout(()=>{tp.remove();addA(x.a,x.c);S.asked++;updateDash();},900);}
-function ask(i,btn){if(btn)btn.disabled=true;addU(QA[i].q);answer(QA[i]);}
+/* 실제 백엔드(EXAONE RAG) 주소 — 서버가 켜져 있으면 진짜 AI가 답하고, 꺼져 있으면 아래 예시로 자동 폴백 */
+const API="http://127.0.0.1:8000";
+let aiLive=false;
+function showTyping(){const tp=document.createElement('div');tp.className='m a typing';tp.innerHTML='<i></i><i></i><i></i>';msgs.appendChild(tp);msgs.scrollTop=msgs.scrollHeight;return tp;}
+/* 백엔드 우선 호출 → 실패 시 fb(예시 답변)로 폴백 */
+async function respond(query, fb){
+  const tp=showTyping();
+  try{
+    const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),60000);
+    const r=await fetch(API+"/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:query}),signal:ctrl.signal});
+    clearTimeout(to);
+    if(!r.ok)throw 0;
+    const d=await r.json();tp.remove();
+    let cites=d.sources||[]; if(d.guardrail)cites=["⚠️ 가드레일: 근거 없음 → 상담사 연결"];
+    addA(d.answer,cites.length?cites:null);
+    aiLive=true; markPill();
+  }catch(e){
+    tp.remove();
+    const x=fb||{a:"좋은 질문이에요. 제가 확실히 아는 내용이 아니라, 정확한 건 가까운 영업점이나 상담원에게 연결해 확인해 드릴게요.",c:["⚠️ 가드레일: 근거 없음 → 사람 연결"]};
+    addA(x.a,x.c);
+  }
+  S.asked++;updateDash();
+}
+function ask(i,btn){if(btn)btn.disabled=true;addU(QA[i].q);respond(QA[i].q,QA[i]);}
 function sendChat(){const v=chatBox.value.trim();if(!v)return;chatBox.value='';addU(v);
   const low=v.toLowerCase();let best=null,bestScore=0;
   QA.forEach(x=>{const sc=x.k.filter(k=>low.includes(k.toLowerCase())).length;if(sc>bestScore){bestScore=sc;best=x;}});
-  if(best)answer(best);
-  else answer({a:"좋은 질문이에요. 제가 확실히 아는 내용이 아니라, 정확한 건 가까운 영업점이나 상담원에게 연결해 확인해 드릴게요.",c:["⚠️ 가드레일: 근거 없음 → 사람 연결"]});
+  respond(v,best);
 }
+/* 챗 카드의 칩에 실시간 연결 상태 표시 */
+function markPill(){const p=document.getElementById('aiPill');if(p)p.innerHTML='🟢 EXAONE 실시간 연결됨 · RAG 근거 인용 · 환각 방지 가드레일';}
+(function pingAI(){fetch(API+"/health").then(r=>r.json()).then(d=>{if(d&&d.ok){aiLive=true;markPill();}}).catch(()=>{});})();
 
 /* ===== 선제 알림 ===== */
 const FEED=[
