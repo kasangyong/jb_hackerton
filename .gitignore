@@ -1,0 +1,21 @@
+# 대용량 영상 (GitHub 100MB 한도 초과) — 압축본(평생곁에_데모_제출.mp4, 8MB)만 포함
+demo/평생곁에 - 데모.mp4
+demo/평생곁에_데모_나레이션.mp4
+
+# 레퍼런스 덱(타 프로젝트)·임시·초안
+proposal/drift_최종제출본.pdf
+proposal/_pptx_dump.txt
+proposal/_____MVP___.pptx
+proposal/MVP제안서_평생곁에_초안.pptx
+
+# 데이콘 빈 제출 양식(원본)
+[데이콘]*.pptx
+[데이콘]*.docx
+
+# OS / temp
+*.tmp
+Thumbs.db
+.DS_Store
+
+# 데이콘 빈 양식(대괄호 이스케이프)
+\[데이콘\]*
