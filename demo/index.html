@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>평생곁에 — 지방 고령 고객 자산 방어 AI 에이전트</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<!-- 카카오맵 JavaScript SDK (도메인 제한 키) — 실패 시 SVG 지도로 자동 폴백 -->
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=362b8545d6cabdf71d22dcfb3451333a&autoload=false"></script>
 <style>
   :root{
     --ink:#eaf1fa; --ink-soft:#93a6c0; --line:rgba(255,255,255,.09);
@@ -246,6 +248,11 @@
   .citychips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
   .citychip{font-size:.8rem;font-weight:700;background:var(--brand-soft);color:var(--brand);padding:6px 11px;border-radius:999px;transition:.3s}
   .citychip.hit{background:var(--danger);color:#fff}
+  /* 카카오맵 */
+  .kmap{width:100%;height:240px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+  .kdot{position:relative;width:13px;height:13px;border-radius:50%;background:#1e9e57;border:2px solid #fff;box-shadow:0 0 0 4px rgba(30,158,87,.28);transition:.25s}
+  .kdot.hit{background:#d23b2e;box-shadow:0 0 0 10px rgba(210,59,46,.45)}
+  .kdot b{position:absolute;left:17px;top:-3px;white-space:nowrap;font-size:.72rem;font-weight:800;color:#eaf1fa;text-shadow:0 1px 4px #000,0 0 3px #000}
   .blog{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:18px}
   .blog .h{font-weight:800;font-size:.98rem;margin-bottom:12px;display:flex;align-items:center;gap:8px}
   .blogrows{display:flex;flex-direction:column;gap:7px;max-height:230px;overflow:auto}
@@ -404,6 +411,8 @@
     </div>
     <div class="mapwrap">
       <div class="maplabel">🗺️ 전북·전남 실시간 보호 현황</div>
+      <div id="kakaoMap" class="kmap" style="display:none"></div>
+      <div id="svgMap">
       <svg viewBox="0 0 300 230" style="width:100%;height:auto">
         <path d="M70,30 Q120,15 170,35 Q210,55 195,95 Q175,120 120,115 Q80,110 65,80 Q55,50 70,30 Z" fill="#1b3252" stroke="#46c7e0" stroke-width="1.5"/>
         <path d="M75,120 Q130,112 185,128 Q220,140 205,180 Q180,215 120,205 Q70,195 60,160 Q58,135 75,120 Z" fill="#16263e" stroke="#46c7e0" stroke-width="1.5"/>
@@ -418,6 +427,7 @@
           <circle class="md" data-city="여수" cx="180" cy="178" r="5" fill="#1e9e57"/>
         </g>
       </svg>
+      </div>
       <div class="citychips" id="citychips">
         <span class="citychip" data-city="전주">전주</span><span class="citychip" data-city="군산">군산</span>
         <span class="citychip" data-city="익산">익산</span><span class="citychip" data-city="광주">광주</span>
@@ -619,7 +629,7 @@ function go(id,btn){
   try{history.replaceState(null,'','#'+id);}catch(e){}
   if(id!=='monitor')stopMon();
   if(id==='home'){counted=false;runCounters();updateDash();}
-  if(id==='board')renderBoard();
+  if(id==='board'){renderBoard();relayoutKakao();}
   if(id==='care')resetChat();
   if(id==='feed')runFeed();
   if(id==='impact')updateDash();
@@ -833,7 +843,29 @@ function recordBlock(who,amt,reason,city){
 function flashCity(city){
   document.querySelectorAll('.md[data-city="'+city+'"]').forEach(d=>{d.setAttribute('fill','#d23b2e');setTimeout(()=>d.setAttribute('fill','#1e9e57'),1200);});
   document.querySelectorAll('.citychip[data-city="'+city+'"]').forEach(c=>{c.classList.add('hit');setTimeout(()=>c.classList.remove('hit'),1200);});
+  if(kdots[city]){kdots[city].classList.add('hit');setTimeout(()=>kdots[city].classList.remove('hit'),1200);}
 }
+
+/* ===== 카카오맵 (실패 시 위 SVG 지도로 자동 폴백) ===== */
+const CITY_LL={전주:[35.8242,127.1480],군산:[35.9676,126.7370],익산:[35.9483,126.9577],광주:[35.1595,126.8526],목포:[34.8118,126.3922],여수:[34.7604,127.6622]};
+const kdots={}; let _kmap=null;
+function initKakaoMap(){
+  if(!window.kakao||!kakao.maps||!kakao.maps.load)return;   // SDK 미로드 → SVG 유지
+  kakao.maps.load(()=>{ try{
+    const el=document.getElementById('kakaoMap');
+    _kmap=new kakao.maps.Map(el,{center:new kakao.maps.LatLng(35.45,126.95),level:12});
+    _kmap.setZoomable(false);
+    Object.entries(CITY_LL).forEach(([city,[la,ln]])=>{
+      const d=document.createElement('div');d.className='kdot';d.innerHTML='<b>'+city+'</b>';kdots[city]=d;
+      new kakao.maps.CustomOverlay({map:_kmap,position:new kakao.maps.LatLng(la,ln),content:d,yAnchor:.5,xAnchor:.5});
+    });
+    document.getElementById('svgMap').style.display='none';
+    el.style.display='block';
+    setTimeout(()=>{_kmap.relayout();_kmap.setCenter(new kakao.maps.LatLng(35.45,126.95));},150);
+  }catch(e){/* 실패 → SVG 폴백 유지 */} });
+}
+function relayoutKakao(){ if(_kmap){setTimeout(()=>{_kmap.relayout();_kmap.setCenter(new kakao.maps.LatLng(35.45,126.95));},60);} }
+initKakaoMap();
 function renderBoard(){
   const bm=document.getElementById('bMoney'); if(!bm)return;
   bm.textContent=won(moneySaved);

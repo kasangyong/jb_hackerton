@@ -246,6 +246,7 @@ jb_hackerton/
 ├─ README.md                      # 본 문서
 ├─ research.md                    # 시장·기술·경쟁 리서치 (출처 30+)
 ├─ plan.md                        # 구현 계획 (kftc-rag 재사용 + 코드 설계)
+├─ 기술상세.md                     # ⭐ 실제 구현 기준 기술 상세(데이터→가공→결과 단계별)
 ├─ backend/                       # ⭐ 실동작 AI 백엔드 (F1 RAG · F2 FDS)
 │   ├─ server.py                  #   FastAPI /chat /fds /health
 │   ├─ rag.py                     #   F1: 하이브리드 검색 + EXAONE + 가드레일

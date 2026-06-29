@@ -16,7 +16,7 @@ proposal/MVP제안서_평생곁에_초안.pptx
 backend/docs/.emb_cache.json
 __pycache__/
 *.pyc
-backend/_*.txt
+backend/_*
 
 # OS / temp
 *.tmp
