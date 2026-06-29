@@ -384,6 +384,16 @@
   .storylog{margin-top:22px;display:flex;flex-direction:column;gap:8px}
   .slog{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 15px;animation:pop .3s}
   .slog .tm{font-weight:900;color:var(--sky);font-variant-numeric:tabular-nums;white-space:nowrap;font-size:.9rem;min-width:64px} .slog .tx{font-size:.92rem;color:var(--ink);line-height:1.5} .slog .tx small{color:var(--ink-soft)}
+  /* 공공데이터 통계 */
+  .statsbox{display:flex;flex-direction:column;gap:9px}
+  .statrow{display:flex;align-items:center;gap:10px}
+  .statrow .lb{width:86px;font-size:.82rem;color:var(--ink-soft);font-weight:700;flex-shrink:0}
+  .statrow .br{flex:1;height:15px;background:var(--raise);border-radius:8px;overflow:hidden}
+  .statrow .br i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--sky));border-radius:8px;transition:width .8s}
+  .statrow .pc{width:46px;text-align:right;font-weight:800;font-size:.84rem;color:var(--ink)}
+  .statbig{display:flex;gap:12px;margin-top:8px}
+  .statbig .sb{flex:1;background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:11px;text-align:center}
+  .statbig .sb .n{font-size:1.5rem;font-weight:900;color:var(--accent)} .statbig .sb .l{font-size:.74rem;color:var(--ink-soft);margin-top:3px}
 </style>
 </head>
 <body>
@@ -669,9 +679,15 @@
     <div class="stack">
       <div class="stk"><div class="h">LLM</div><div class="b">EXAONE-3.5 (로컬) / HyperCLOVA X SEED — JB·네이버클라우드 제휴 정합, 온프레미스</div></div>
       <div class="stk"><div class="h">검색·RAG</div><div class="b">BM25(kiwipiepy)+Dense(BGE-M3, Qdrant)+RRF+Cross-Encoder Reranker</div></div>
-      <div class="stk"><div class="h">사기 방어</div><div class="b">FDS 가이드라인 룰 + 개인화 베이스라인(z-score) → 확장: Isolation Forest·GNN</div></div>
-      <div class="stk"><div class="h">데이터</div><div class="b">금소법·FDS 가이드라인, 연금·예적금 약관, 경찰청 보이스피싱, KorCCVi, 합성 거래</div></div>
+      <div class="stk"><div class="h">사기 방어</div><div class="b">FDS 가이드라인 룰 + 개인화 베이스라인(z-score) + 수취계좌 평판 조회 → 확장: Isolation Forest·GNN</div></div>
+      <div class="stk"><div class="h">계좌 평판</div><div class="b">사기 신고 이력 계좌면 즉시 완전 차단 · 데모=샘플, 본구현=JB 사기계좌 공유 DB/더치트</div></div>
+      <div class="stk"><div class="h">데이터</div><div class="b">금소법·FDS 가이드라인, 연금·예적금 약관, 경찰청 보이스피싱, 공공데이터 사기통계, KorCCVi, 합성 거래</div></div>
     </div>
+  </div>
+  <div class="card">
+    <h3 class="ct"><span class="dot"></span>공공데이터 기반 사기 통계 <small style="font-weight:600;color:var(--ink-soft);font-size:.78rem">우체국 사기계좌·경찰청·금감원</small></h3>
+    <div id="statsBox" class="statsbox"><div style="color:var(--ink-soft);font-size:.85rem">불러오는 중…</div></div>
+    <div class="pill" id="statsSrc" style="margin-top:12px">수취계좌 평판 조회 · 사기 신고 이력 계좌면 즉시 완전 차단</div>
   </div>
 </section>
 
@@ -728,7 +744,7 @@ const PRESETS={
   A:{holder:"박OO 어르신 (71세)",age:71,recip:"김영수 (아들)",acct:"전북은행 1**-**-4457",isNew:false,
      baseAmounts:[300000,350000,280000,2500000,3000000,320000],usualHours:[10,11,14,15],known:true,hour:14,
      desc:"매달 생활비를 <b>아들(김영수)</b>에게 송금. 큰 금액도 보낸 적 있음 → 300만원도 평소 패턴 안."},
-  B:{holder:"김OO 어르신 (73세)",age:73,recip:"안전계좌 (예금보호원)",acct:"○○은행 9**-**-0021",isNew:true,
+  B:{holder:"김OO 어르신 (73세)",age:73,recip:"안전계좌 (예금보호원)",acct:"○○은행 901-2345-0021",isNew:true,
      baseAmounts:[200000,250000,180000,300000,220000],usualHours:[9,10,13,16],known:false,hour:14,
      desc:"“검찰” 전화에 속아 <b>처음 보는 ‘안전계좌’</b>로 송금 시도 → 평소와 완전히 다름."},
 };
@@ -797,7 +813,7 @@ async function trySend(){
   let engine="브라우저 엔진";
   try{                                     // 백엔드 FDS 엔진(Python)이 켜져 있으면 그 판정을 사용
     const resp=await fetch(API+"/fds",{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({amount:amount,age:u.age,isNew:u.isNew,known:u.known,baseAmounts:u.baseAmounts,usualHours:u.usualHours,hour:u.hour})});
+      body:JSON.stringify({amount:amount,age:u.age,isNew:u.isNew,known:u.known,baseAmounts:u.baseAmounts,usualHours:u.usualHours,hour:u.hour,account:u.acct||''})});
     if(resp.ok){r=await resp.json();engine="JB FDS 엔진 · Python 백엔드";aiLive=true;markPill();}
   }catch(e){}
   window._cur={who:u.holder,amt:amount,reason:(r.flags[0]?r.flags[0].text:'이상 거래'),city:'전주'};
@@ -941,6 +957,19 @@ function initKakaoMap(){
 }
 function relayoutKakao(){ initKakaoMap(); }
 
+/* ===== 공공데이터 사기 통계 (백엔드 /stats, 없으면 번들 표본) ===== */
+const FALLBACK_STATS={source:"우체국 사기계좌·경찰청·금감원",mode:"표본",byType:[{label:"기관사칭형",pct:51},{label:"대출빙자형",pct:29},{label:"기타",pct:20}],byAge:[{label:"60대 이상",pct:30.6}],avgLossManwon:530};
+function renderStats(d){
+  const box=document.getElementById('statsBox');if(!box)return;
+  if(!d||!d.byType)d=FALLBACK_STATS;
+  const bars=(d.byType||[]).map(x=>`<div class="statrow"><div class="lb">${x.label}</div><div class="br"><i style="width:${x.pct}%"></i></div><div class="pc">${x.pct}%</div></div>`).join('');
+  box.innerHTML=`<div style="font-size:.78rem;color:var(--ink-soft);margin-bottom:2px">사기 유형 분포</div>${bars}`+
+    `<div class="statbig"><div class="sb"><div class="n">${d.avgLossManwon?d.avgLossManwon+'만원':'-'}</div><div class="l">1건 평균 피해</div></div>`+
+    `<div class="sb"><div class="n">${(d.byAge&&d.byAge[0])?d.byAge[0].pct+'%':'-'}</div><div class="l">${(d.byAge&&d.byAge[0])?d.byAge[0].label+' 비중':'고령 피해'}</div></div></div>`;
+  const src=document.getElementById('statsSrc');if(src)src.innerHTML='출처: '+(d.source||'공공데이터')+(d.mode?' · '+d.mode:'');
+}
+(function pingStats(){fetch(API+"/stats").then(r=>r.json()).then(renderStats).catch(()=>renderStats(null));})();
+
 /* ===== 실감 시나리오 (송금 직전 30초) ===== */
 let _storyTimers=[],_storyPlaying=false;
 const elderScr=()=>document.getElementById('elderScr');
@@ -962,7 +991,7 @@ function resetStory(){
   const b=document.getElementById('playStoryBtn');if(b){b.disabled=false;b.textContent='▶ 실제 상황 재생';}
 }
 async function judgeStory(){
-  const u={amount:3000000,age:73,isNew:true,known:false,baseAmounts:[200000,250000,180000,300000,220000],usualHours:[9,10,13,16],hour:14};
+  const u={amount:3000000,age:73,isNew:true,known:false,baseAmounts:[200000,250000,180000,300000,220000],usualHours:[9,10,13,16],hour:14,account:"○○은행 901-2345-0021"};
   let r={score:100,level:"위험 🔴",flags:[
     {layer:1,text:"고령 계좌 → 신규 수취인에게 3,000,000원 (100만원↑)",pts:50},
     {layer:2,text:"평생 처음 보는 수취인",pts:25},
@@ -972,7 +1001,7 @@ async function judgeStory(){
   const scr=elderScr();if(!scr)return;
   scr.innerHTML=`<div class="fdsjudge"><div class="fdsnum" style="color:var(--danger)" id="stNum">0<small>/100</small></div><div class="fdslvl" style="color:var(--danger)">${r.level}</div><div class="fdsflags" id="stFlags"></div></div>`;
   let n=0;const tgt=r.score;const iv=setInterval(()=>{n+=7;if(n>=tgt){n=tgt;clearInterval(iv);}const e=document.getElementById('stNum');if(e)e.innerHTML=n+'<small>/100</small>';},45);_storyTimers.push(iv);
-  r.flags.forEach((f,i)=>_st(350+i*350,()=>{const fl=document.getElementById('stFlags');if(fl)fl.insertAdjacentHTML('beforeend',`<div class="ff"><b>${f.layer}층</b> ${f.text} <b>+${f.pts}</b></div>`);}));
+  r.flags.forEach((f,i)=>_st(350+i*350,()=>{const fl=document.getElementById('stFlags');const tier=(typeof f.layer==='number')?f.layer+'층':f.layer;if(fl)fl.insertAdjacentHTML('beforeend',`<div class="ff"><b>${tier}</b> ${f.text} <b>+${f.pts}</b></div>`);}));
   slog('14:15:00','🛡️ 평생곁에 FDS <b>0.02초 판정</b> → score '+r.score+' '+r.level+' <small>(1층 룰 + 2층 z-score 베이스라인)</small>');
 }
 function playStory(){

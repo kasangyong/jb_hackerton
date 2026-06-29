@@ -1,0 +1,16 @@
+{
+  "source": "우체국금융개발원 금융사기계좌 정보(공공데이터포털 15021794) · 경찰청·금융감독원",
+  "mode": "표본(번들)",
+  "byType": [
+    {"label": "기관사칭형", "pct": 51},
+    {"label": "대출빙자형", "pct": 29},
+    {"label": "기타", "pct": 20}
+  ],
+  "byAge": [
+    {"label": "60대 이상", "pct": 30.6},
+    {"label": "50대", "pct": 21.0},
+    {"label": "40대 이하", "pct": 48.4}
+  ],
+  "avgLossManwon": 530,
+  "note": "DATA_GO_KR_KEY 설정 후 backend/fetch_stats.py 실행 시 실데이터로 자동 갱신됩니다."
+}
