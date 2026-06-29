@@ -247,6 +247,7 @@ jb_hackerton/
 ├─ research.md                    # 시장·기술·경쟁 리서치 (출처 30+)
 ├─ plan.md                        # 구현 계획 (kftc-rag 재사용 + 코드 설계)
 ├─ 기술상세.md                     # ⭐ 실제 구현 기준 기술 상세(데이터→가공→결과 단계별)
+├─ 사용자시나리오.md               # ⭐ 현실 기반 시나리오(무설치 앰비언트·송금직전 30초 분단위·가족연계)
 ├─ backend/                       # ⭐ 실동작 AI 백엔드 (F1 RAG · F2 FDS)
 │   ├─ server.py                  #   FastAPI /chat /fds /health
 │   ├─ rag.py                     #   F1: 하이브리드 검색 + EXAONE + 가드레일
