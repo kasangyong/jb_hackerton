@@ -54,6 +54,11 @@ class FdsIn(BaseModel):
     account: str = ""        # 수취계좌(평판 조회용)
 
 
+class BriefIn(BaseModel):
+    blocks: List[dict] = []  # 차단 로그 [{who, amt, city, reason}]
+    totalSaved: int = 0
+
+
 @app.get("/health")
 def health():
     return {"ok": ENGINE.ready, "llm": rag.LLM_MODEL, "embed": rag.EMBED_MODEL,
@@ -87,6 +92,27 @@ def fds_eval(inp: FdsIn):
         res.update(score=100, level="위험 🔴", cls="danger", action="stop", blacklisted=True,
                    say="이 계좌는 사기 신고 이력이 있어요. 절대 보내면 안 됩니다. 송금을 멈췄습니다.")
     return res
+
+
+@app.post("/brief")
+def brief(inp: BriefIn):
+    """은행 측 LLM 활용 — 본부 담당자용 '관제 브리핑'을 EXAONE이 차단 로그로 작성."""
+    if not inp.blocks:
+        return {"brief": "오늘 차단된 의심 거래가 없습니다. 전북·전남 보호 고객 거래는 정상 범위입니다."}
+    lines = "\n".join(
+        f"- {b.get('who','')} / ₩{int(b.get('amt',0)):,} / {b.get('city','')} / 사유: {b.get('reason','')}"
+        for b in inp.blocks[:12])
+    system = ("당신은 JB금융그룹 본부 사기방어 관제 담당자를 돕는 AI입니다. 아래 '차단 로그'만 근거로 "
+              "관제 브리핑을 작성하세요. 규칙: 1) 로그에 있는 숫자·지역·사유만 사용하고 지어내지 말 것 "
+              "2) 3~4문장의 간결한 보고체 3) 핵심 패턴과 집중 지역을 짚을 것 4) 마지막에 권고 조치 1개.")
+    user = (f"[차단 로그] 아래는 평생곁에가 송금 직전에 차단한 의심 '이체(송금)' 거래 목록이다. "
+            f"총 {len(inp.blocks)}건, 방어액 ₩{int(inp.totalSaved):,}\n{lines}")
+    if not ENGINE.ready:
+        return {"brief": "(AI 준비 중) 상황판 수치를 확인하세요.", "error": ENGINE.error}
+    try:
+        return {"brief": ENGINE._chat(system, user)}
+    except Exception as e:
+        return {"brief": "(AI 연결 오류) 상황판 수치를 확인하세요.", "error": str(e)}
 
 
 if __name__ == "__main__":
