@@ -56,7 +56,7 @@ start demo/index.html      # Windows
 데모의 자산 케어·사기 방어는 정적 답변이 아니라, 로컬 백엔드(`backend/`)에서 **실제로 계산·추론**한다. 서버가 꺼져 있으면 데모는 브라우저 내장 로직/예시로 자동 폴백한다(발표장 안전장치).
 
 ```
-[데모 자산케어 챗] ── POST /chat ──▶ [FastAPI :8000] ─ 검색 ▶ docs/*.md (공식 출처 6종)
+[데모 자산케어 챗] ── POST /chat ──▶ [FastAPI :8000] ─ 검색 ▶ docs/*.md (공식 출처 7종·전북은행 실상품 포함)
                                                   └ 생성 ▶ Ollama (EXAONE-3.5-2.4B)
 [데모 사기 방어]   ── POST /fds ───▶ [FastAPI :8000]  2층 FDS 엔진 → 신호등🟢🟡🔴
 ```
@@ -212,7 +212,7 @@ score >= 70 ? "위험 🔴 (송금 멈춤)" : score >= 35 ? "주의 🟡" : "안
 | 사기 데이터 | **KorCCVi**(한국어 보이스피싱) | [GitHub](https://github.com/selfcontrol7/Korean_Voice_Phishing_Detection) | 연구용 |
 | UI | 데모: 단일 HTML/JS (음성 Web Speech API) · 본 구현: Streamlit + FastAPI | — | 데모는 컨셉 목업(웹) |
 
-**데이터 (전부 공개/합성 · 개인정보 0)**: RAG 문서 6종(주택연금·기초연금·예금자보호·정기예금/적금·보이스피싱·의료비)은 **실제 공식 기관 원문 기반으로 작성하고 각 문서에 인용 URL을 명시**([`backend/docs/`](backend/docs/)). 거래 데이터는 **합성**으로 사용자별 베이스라인 구성. (확장: JB 공개 상품설명서·약관 PDF를 docs에 추가하면 동일 파이프라인으로 동작)
+**데이터 (전부 공개/합성 · 개인정보 0)**: RAG 문서 **7종**(주택연금·기초연금·예금자보호·정기예금/적금·보이스피싱·의료비 + **전북은행 실제 공개 상품**)은 **공식 기관·은행 공개자료 원문 기반 + 인용 URL**([`backend/docs/`](backend/docs/)). **전북은행 JB 골든에이지·JB 리치 100 등 실제 공개 상품(jbbank.co.kr)을 포함 → "JB 실상품 기반 RAG"**. 거래 데이터는 **합성**. 검색 코퍼스는 공개 문서라 계속 확장 가능(학습형 고도화는 내부 실거래 필요 → 확장 단계).
 
 ---
 
@@ -270,7 +270,7 @@ jb_hackerton/
 │   ├─ fraud_accounts.json        #   샘플 사기계좌 블랙리스트(본구현=JB DB/더치트)
 │   ├─ fetch_stats.py             #   공공데이터 사기통계 갱신(DATA_GO_KR_KEY env)
 │   ├─ fraud_stats.json           #   사기통계(번들 표본 / 실데이터 갱신본)
-│   ├─ docs/                      #   금융 문서 6종 (공식 출처 원문 기반 + 인용 URL)
+│   ├─ docs/                      #   금융 문서 7종 (공식 출처 + 전북은행 실제 공개 상품, 인용 URL)
 │   ├─ requirements.txt
 │   └─ README.md                  #   설치·실행법
 ├─ demo/
