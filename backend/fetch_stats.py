@@ -19,6 +19,12 @@
 import os, json, collections
 import requests
 
+try:  # backend/.env 자동 로드(있으면)
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+except Exception:
+    pass
+
 KEY = os.environ.get("DATA_GO_KR_KEY")
 ENDPOINT = os.environ.get("DATA_GO_KR_ENDPOINT")
 OUT = os.path.join(os.path.dirname(__file__), "fraud_stats.json")

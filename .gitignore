@@ -18,6 +18,11 @@ __pycache__/
 *.pyc
 backend/_*
 
+# 로컬 실행 가이드·환경변수(인증키 포함) — 커밋 금지
+노트북_실행가이드.md
+backend/.env
+.env
+
 # OS / temp
 *.tmp
 Thumbs.db

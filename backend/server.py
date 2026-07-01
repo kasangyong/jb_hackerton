@@ -11,6 +11,11 @@
   → http://127.0.0.1:8000  (데모 index.html이 이 주소로 연결됨)
 """
 import os, json
+try:  # backend/.env 자동 로드(있으면). 없거나 python-dotenv 미설치여도 무해.
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+except Exception:
+    pass
 from contextlib import asynccontextmanager
 from typing import List
 from fastapi import FastAPI
