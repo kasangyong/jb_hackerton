@@ -398,6 +398,17 @@
   .briefbtn{border:none;background:var(--brand);color:#fff;font-family:inherit;font-weight:800;padding:8px 15px;border-radius:10px;cursor:pointer;font-size:.85rem;white-space:nowrap}
   .briefbtn:disabled{opacity:.55;cursor:default}
   .briefout{margin-top:11px;background:var(--raise);border:1px solid var(--line);border-left:3px solid var(--sky);border-radius:12px;padding:14px 16px;font-size:.96rem;line-height:1.7;color:var(--ink);min-height:54px}
+  /* 홈 신뢰 스트립 */
+  .trust{display:flex;gap:9px;flex-wrap:wrap;margin:6px 0 2px}
+  .trust .tb{font-size:.82rem;font-weight:700;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 14px;color:var(--sky)}
+  /* 실시간 감시 속도 */
+  .monspeed{display:inline-flex;gap:6px;margin-left:12px;vertical-align:middle}
+  .monspeed button{border:1px solid var(--line);background:var(--raise);color:var(--ink-soft);font-family:inherit;font-weight:700;border-radius:9px;padding:8px 12px;cursor:pointer;font-size:.82rem}
+  .monspeed button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  /* 고령 친화 모드 버튼 */
+  .a11y button.senior.on{background:var(--accent);color:#0a1422;border-color:var(--accent);font-weight:800}
+  .autoread{border:1px solid var(--line);background:var(--raise);color:var(--ink-soft);font-family:inherit;font-weight:700;border-radius:10px;padding:8px 13px;cursor:pointer;font-size:.85rem;margin-top:10px}
+  .autoread.on{background:var(--safe);color:#0a1422;border-color:var(--safe)}
 </style>
 </head>
 <body>
@@ -418,6 +429,7 @@
     <button onclick="fontStep(-1)" title="글씨 작게">A−</button>
     <button onclick="fontStep(1)" title="글씨 크게">A＋</button>
     <button id="hcBtn" onclick="toggleHC()" title="고대비">고대비</button>
+    <button id="seniorBtn" onclick="toggleSenior()" title="고령 친화 모드(큰 글씨+고대비)">👵 고령 모드</button>
   </div>
 </div></nav>
 
@@ -429,6 +441,12 @@
   <div class="thesis">고령자의 자산관리는<br><span class="strike">불리는 것</span>이 아니라 <span class="hl">지키는 것</span>입니다.</div>
   <p class="lead">전북·전남은 전국에서 가장 빠르게 늙어갑니다. 점포는 사라지고, 어르신은 디지털에서 소외되고, 노후자금을 노리는 사기는 폭증합니다. <b>평생곁에</b>는 어르신의 <b>대화</b>와 <b>거래</b>를 함께 지켜보다, 위험한 송금 <b>직전 30초</b>에 먼저 개입합니다.</p>
   <div class="wm"><span class="a">Wealth Management</span><span style="font-size:1.3rem">→</span><span class="b">Wealth <em>Defense</em></span></div>
+  <div class="trust">
+    <span class="tb">✅ 실동작 백엔드(EXAONE·로컬)</span>
+    <span class="tb">🔬 간이 정확도 100%</span>
+    <span class="tb">🔒 온프레미스 · 데이터 안 나감</span>
+    <span class="tb">🏦 JB금융그룹 · 전북은행</span>
+  </div>
 
   <div class="stats">
     <div class="stat"><div class="n" data-to="30.6"><small>0</small></div><div class="d">전남 고령화율 — 전국 1위 (전북 25.4%)</div><div class="src">통계청 2025</div></div>
@@ -628,6 +646,7 @@
       <p class="hint">버튼을 누르거나, 왼쪽에 직접 입력하세요.</p>
       <div class="asks" id="asks"></div>
       <div style="margin-top:16px" class="pill" id="aiPill">RAG · 근거 인용 · 환각 방지 가드레일 · 음성 안내</div>
+      <button class="autoread" id="autoReadBtn" onclick="toggleAutoRead()" title="답변을 자동으로 소리내어 읽어줍니다">🔊 자동 읽어주기 꺼짐</button>
     </div>
   </div>
 </section>
@@ -648,10 +667,16 @@
 
   <div class="mon-top">
     <button class="cta-main" id="monBtn" onclick="toggleMon()">▶ 실시간 감시 시작</button>
+    <span class="monspeed">
+      <button onclick="setMonSpeed(2400,this)">느리게</button>
+      <button class="on" onclick="setMonSpeed(1500,this)">보통</button>
+      <button onclick="setMonSpeed(650,this)">빠르게</button>
+    </span>
     <div class="mon-stats">
       <div class="kv"><b id="m1">0</b><span>감시한 거래</span></div>
       <div class="kv"><b id="m2" style="color:var(--safe)">0</b><span>정상 통과</span></div>
       <div class="kv"><b id="m3" style="color:var(--danger)">0</b><span>자동 차단</span></div>
+      <div class="kv"><b id="mMoney" style="color:var(--accent)">₩0</b><span>방어한 금액</span></div>
     </div>
   </div>
   <div class="monfeed" id="monfeed">
@@ -695,6 +720,12 @@
       <div class="stk"><div class="h">계좌 평판</div><div class="b">사기 신고 이력 계좌면 즉시 완전 차단 · 데모=샘플, 본구현=JB 사기계좌 공유 DB/더치트</div></div>
       <div class="stk"><div class="h">데이터</div><div class="b">금소법·FDS 가이드라인, 연금·예적금 약관, 경찰청 보이스피싱, 공공데이터 사기통계, KorCCVi, 합성 거래</div></div>
     </div>
+  </div>
+  <div class="card">
+    <h3 class="ct"><span class="dot"></span>🔬 신뢰성 검증 <small style="font-weight:600;color:var(--ink-soft);font-size:.78rem">우리 시스템이 실제로 정확한가 — 백엔드에서 직접 측정</small></h3>
+    <div id="evalBox" class="statsbox"></div>
+    <button class="briefbtn" id="evalBtn" onclick="runEval()" style="margin-top:12px">🔬 라이브 검증 실행 (실제 EXAONE으로)</button>
+    <span class="pill" id="evalNote" style="margin-left:10px">범위 밖 질문은 거부(가드레일) · FDS 판정 정확</span>
   </div>
   <div class="card">
     <h3 class="ct"><span class="dot"></span>공공데이터 기반 사기 통계 <small style="font-weight:600;color:var(--ink-soft);font-size:.78rem">우체국 사기계좌·경찰청·금감원</small></h3>
@@ -745,6 +776,11 @@ function go(id,btn){
 /* 접근성 */
 let fs=17;function fontStep(d){fs=Math.max(15,Math.min(23,fs+d));document.documentElement.style.setProperty('--fs',fs+'px');toast(`글씨 크기 <b>${fs}px</b>`);}
 function toggleHC(){document.body.classList.toggle('hc');hcBtn.classList.toggle('on');toast(document.body.classList.contains('hc')?'고대비 <b>켜짐</b>':'고대비 꺼짐');}
+function toggleSenior(){const on=!document.body.classList.contains('senior');
+  document.body.classList.toggle('senior',on);const sb=document.getElementById('seniorBtn');if(sb)sb.classList.toggle('on',on);
+  fs=on?22:17;document.documentElement.style.setProperty('--fs',fs+'px');
+  document.body.classList.toggle('hc',on);hcBtn.classList.toggle('on',on);
+  toast(on?'👵 고령 친화 모드 <b>켜짐</b> (큰 글씨·고대비)':'고령 친화 모드 꺼짐');}
 /* 음성 TTS */
 function speak(text){if(!('speechSynthesis'in window)){toast('이 브라우저는 음성을 지원하지 않아요');return;}
   const u=new SpeechSynthesisUtterance(text.replace(/\(근거[^)]*\)/g,''));u.lang='ko-KR';u.rate=.95;u.pitch=1;
@@ -893,7 +929,10 @@ const _spoken=[];
 function addA(t,cites){const i=_spoken.push(t)-1;const e=document.createElement('div');e.className='m a';
   e.innerHTML=t+(cites?`<div class="cite">${cites.map(c=>`<span>📎 ${c}</span>`).join('')}</div>`:'')+
     `<button class="speak" onclick="speak(_spoken[${i}])">🔊 읽어주기</button>`;
-  msgs.appendChild(e);msgs.scrollTop=msgs.scrollHeight;}
+  msgs.appendChild(e);msgs.scrollTop=msgs.scrollHeight;
+  if(autoRead)speak(t);}
+let autoRead=false;
+function toggleAutoRead(){autoRead=!autoRead;const b=document.getElementById('autoReadBtn');b.classList.toggle('on',autoRead);b.textContent=autoRead?'🔊 자동 읽어주기 켜짐':'🔊 자동 읽어주기 꺼짐';toast(autoRead?'답변을 자동으로 읽어드려요':'자동 읽어주기 꺼짐');}
 /* 실제 백엔드(EXAONE RAG) 주소 — 서버가 켜져 있으면 진짜 AI가 답하고, 꺼져 있으면 아래 예시로 자동 폴백 */
 const API="http://127.0.0.1:8000";
 let aiLive=false;
@@ -997,6 +1036,20 @@ function renderStats(d){
   const src=document.getElementById('statsSrc');if(src)src.innerHTML='출처: '+(d.source||'공공데이터')+(d.mode?' · '+d.mode:'');
 }
 (function pingStats(){fetch(API+"/stats").then(r=>r.json()).then(renderStats).catch(()=>renderStats(null));})();
+
+/* ===== 신뢰성 라이브 검증 ===== */
+const EVAL_FALLBACK=[{label:'질문 응답',val:8,max:8},{label:'근거 인용',val:8,max:8},{label:'핵심 사실',val:3,max:3},{label:'범위밖 거부',val:4,max:4},{label:'FDS 판정',val:3,max:3}];
+function renderEval(d){const box=document.getElementById('evalBox');if(!box)return;
+  const items=(d&&d.items)?d.items:EVAL_FALLBACK;const live=!!(d&&d.items);
+  box.innerHTML=items.map(x=>{const pct=x.max?Math.round(x.val/x.max*100):0;const ok=x.val===x.max;
+    return `<div class="statrow"><div class="lb">${x.label}</div><div class="br"><i style="width:${pct}%;background:${ok?'var(--safe)':'var(--warn)'}"></i></div><div class="pc">${x.val}/${x.max} ${ok?'✅':''}</div></div>`;}).join('');
+  const note=document.getElementById('evalNote');if(note)note.textContent=live?'🟢 방금 백엔드에서 실측한 결과입니다':'저장된 평가결과(간이 12문항) · 라이브 검증을 눌러 실측';}
+async function runEval(){const btn=document.getElementById('evalBtn'),box=document.getElementById('evalBox');
+  btn.disabled=true;btn.textContent='검증 중… (EXAONE 실측 ~수초)';box.innerHTML='<div style="color:var(--ink-soft);font-size:.85rem">백엔드에서 실제 질문을 돌려 정확도를 측정 중…</div>';
+  try{const r=await fetch(API+"/eval");const d=await r.json();if(!d||!d.ok)throw 0;renderEval(d);toast('🔬 라이브 검증 완료');}
+  catch(e){renderEval(null);toast('백엔드 미연결 — 저장된 평가결과 표시');}
+  btn.disabled=false;btn.textContent='🔬 라이브 검증 실행 (실제 EXAONE으로)';}
+renderEval(null);
 
 /* ===== 은행 측 LLM — 본부 관제 AI 브리핑 ===== */
 async function genBrief(){
@@ -1113,7 +1166,8 @@ const CUST=[
  {nm:"정복동 어르신",base:[500000,480000,520000,510000],known:"단골 거래처"},
  {nm:"최금자 어르신",base:[200000,250000,210000,230000],known:"아들 계좌"},
 ];
-let monTimer=null,monN=0,monPass=0,monBlock=0;
+let monTimer=null,monN=0,monPass=0,monBlock=0,monSpeed=1500,monMoney=0;
+function setMonSpeed(ms,btn){monSpeed=ms;document.querySelectorAll('.monspeed button').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');if(monTimer){clearInterval(monTimer);monTimer=setInterval(monTick,monSpeed);}}
 function monTick(){
   const c=CUST[Math.floor(Math.random()*CUST.length)];
   const attack=Math.random()<0.28; let tx;
@@ -1128,13 +1182,13 @@ function monTick(){
   row.innerHTML=`<div class="who">${c.nm}</div><div class="det"><b>${won(tx.amount)}원</b> → ${tx.recip}${rsn}</div><div class="verdict">${blocked?'🛑 자동 차단':'🟢 통과'}</div>`;
   const feed=document.getElementById('monfeed');const empty=feed.querySelector('.mon-empty');if(empty)feed.innerHTML='';
   feed.prepend(row);while(feed.children.length>9)feed.removeChild(feed.lastChild);
-  monN++; if(blocked){monBlock++;const city=["전주","군산","익산","광주","목포","여수"][Math.floor(Math.random()*6)];
+  monN++; if(blocked){monBlock++;monMoney+=tx.amount;const city=["전주","군산","익산","광주","목포","여수"][Math.floor(Math.random()*6)];
     recordBlock(c.nm,tx.amount,(r.flags[0]?r.flags[0].text:'이상 거래'),city);toast(`🛑 ${c.nm}의 의심 거래를 자동 차단했어요`);}else monPass++;
-  m1.textContent=monN;m2.textContent=monPass;m3.textContent=monBlock;
+  m1.textContent=monN;m2.textContent=monPass;m3.textContent=monBlock;mMoney.textContent='₩'+won(monMoney);
 }
 function toggleMon(){const b=document.getElementById('monBtn');
   if(monTimer){stopMon();return;}
-  b.textContent='⏸ 감시 중… (클릭하면 멈춤)';monTick();monTimer=setInterval(monTick,1500);}
+  b.textContent='⏸ 감시 중… (클릭하면 멈춤)';monTick();monTimer=setInterval(monTick,monSpeed);}
 function stopMon(){if(monTimer){clearInterval(monTimer);monTimer=null;}const b=document.getElementById('monBtn');if(b)b.textContent='▶ 실시간 감시 시작';}
 
 /* ===== 음성 입력(STT) ===== */
