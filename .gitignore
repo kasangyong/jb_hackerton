@@ -23,6 +23,9 @@ backend/_*
 backend/.env
 .env
 
+# humanize-korean 작업 폴더(임시)
+_workspace/
+
 # OS / temp
 *.tmp
 Thumbs.db
